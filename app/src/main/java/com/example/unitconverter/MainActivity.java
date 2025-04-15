@@ -23,6 +23,28 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+
+import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity {
     // UI Components
     private EditText inputValue;
@@ -30,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner outputUnitSpinner;
     private TextView resultTextView;
 
-    // Unit conversion factors (to meters)
+
     private final Map<String, Double> conversionFactors = new HashMap<String, Double>() {{
         put("Feet", 0.3048);
         put("Inches", 0.0254);
@@ -44,21 +66,36 @@ public class MainActivity extends AppCompatActivity {
     private boolean isUpdating = false;
     private DecimalFormat decimalFormat = new DecimalFormat("#.#####");
 
+
+    private SharedPreferences sharedPreferences;
+    private static final String PREFERENCES_NAME = "unit_converter_prefs";
+    private static final String DARK_MODE_KEY = "dark_mode_enabled";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
+        sharedPreferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
+        boolean isDarkModeEnabled = sharedPreferences.getBoolean(DARK_MODE_KEY, false);
+        if (isDarkModeEnabled) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
         setContentView(R.layout.activity_main);
 
-        // Initialize UI components
+
         inputValue = findViewById(R.id.input_value);
         inputUnitSpinner = findViewById(R.id.input_unit_spinner);
         outputUnitSpinner = findViewById(R.id.output_unit_spinner);
         resultTextView = findViewById(R.id.result_text_view);
 
-        // Setup spinners with unit options
+
         setupSpinners();
 
-        // Setup input text change listener
+
         inputValue.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -79,8 +116,36 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        boolean isDarkModeEnabled = sharedPreferences.getBoolean(DARK_MODE_KEY, false);
+        boolean isNightMode = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES;
+
+        if (isDarkModeEnabled != isNightMode) {
+            recreate();
+        }
+    }
+
     private void setupSpinners() {
-        // Create adapter for the spinners
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
@@ -88,15 +153,15 @@ public class MainActivity extends AppCompatActivity {
         );
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-        // Set adapters to spinners
+
         inputUnitSpinner.setAdapter(adapter);
         outputUnitSpinner.setAdapter(adapter);
 
-        // Set default selections
+
         inputUnitSpinner.setSelection(3); // Meters
         outputUnitSpinner.setSelection(0); // Feet
 
-        // Set selection listeners
+
         inputUnitSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
